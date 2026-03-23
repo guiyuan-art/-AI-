@@ -570,5 +570,67 @@ document.getElementById('db-in').addEventListener('keydown', e=>{if(e.key==='Ent
 const obs = new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('on')})},{threshold:.1});
 document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
 </script>
+  <script>
+// 👇 替换成你自己的API_KEY和模型ID！
+const API_KEY = "cd784a02-7b43-4da9-8f24-eed89f82878a";
+const MODEL_ID = "doubao-seed-1-8-251228";
+const API_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
+
+// 绑定发送按钮和回车事件
+document.getElementById("send-btn").addEventListener("click", sendMessage);
+document.getElementById("user-input").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
+
+// 发送消息函数
+async function sendMessage() {
+  const input = document.getElementById("user-input");
+  const chatArea = document.getElementById("chat-area");
+  const text = input.value.trim();
+  if (!text) return;
+
+  // 显示用户消息
+  addMessage(text, "user");
+  input.value = "";
+
+  // 显示加载中
+  const loading = addMessage("AI正在思考中...", "bot", true);
+
+  try {
+    // 调用豆包API
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model: MODEL_ID,
+        messages: [{ role: "user", content: text }]
+      })
+    });
+
+    const data = await res.json();
+    loading.remove();
+    // 显示AI回复
+    addMessage(data.choices[0].message.content, "bot");
+  } catch (err) {
+    loading.remove();
+    addMessage("出错了，请稍后重试", "bot");
+    console.error(err);
+  }
+}
+
+// 把消息添加到聊天窗口
+function addMessage(text, sender, isLoading = false) {
+  const msg = document.createElement("div");
+  msg.className = `message ${sender === "user" ? "user-message" : "bot-message"}`;
+  if (isLoading) msg.classList.add("loading");
+  msg.textContent = text;
+  document.getElementById("chat-area").appendChild(msg);
+  document.getElementById("chat-area").scrollTop = document.getElementById("chat-area").scrollHeight;
+  return msg;
+}
+</script>
 </body>
 </html>
